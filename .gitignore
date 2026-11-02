@@ -1,0 +1,15 @@
+# Relay project files — local only
+MEMORY.md
+status.md
+context.md
+tasks.md
+AUDIT_LOG.md
+
+# Raw data — large, rebuildable via scripts/build_data.py
+data/raw/
+
+# Node / Python
+node_modules/
+__pycache__/
+*.pyc
+.env
