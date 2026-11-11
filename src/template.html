@@ -9,7 +9,9 @@
 <meta property="og:description" content="Explore 4,606 real near-Earth asteroids from NASA/JPL with live in-browser Kepler orbit propagation.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://asteroids.siten.ai/">
+<meta property="og:image" content="https://asteroids.siten.ai/preview.png">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://asteroids.siten.ai/preview.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%98%84%EF%B8%8F%3C/text%3E%3C/svg%3E">
 <style>
   :root{
@@ -43,23 +45,26 @@
   #masthead h1 em{font-style:italic;color:var(--hot)}
   #masthead .dek{font-size:11px;line-height:1.7;color:var(--dim);letter-spacing:.04em;max-width:400px}
 
-  /* ---------- search box ---------- */
-  #search-box{margin-top:12px;width:340px;position:relative;pointer-events:auto}
-  .search-input-wrap{display:flex;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:2px;padding:6px 10px;backdrop-filter:blur(6px);transition:border-color .2s}
+  /* ---------- search box & actions ---------- */
+  #search-box{margin-top:12px;width:440px;max-width:calc(100vw - 360px);position:relative;pointer-events:auto}
+  .search-bar-row{display:flex;align-items:center;gap:8px}
+  .search-input-wrap{flex:1;display:flex;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:2px;padding:6px 10px;backdrop-filter:blur(6px);transition:border-color .2s}
   .search-input-wrap:focus-within{border-color:var(--hot);box-shadow:0 0 10px rgba(255,209,102,.25)}
   .search-icon{font-size:11px;color:var(--dim);margin-right:8px;user-select:none}
   #neo-search{background:none;border:none;outline:none;color:#eef3ff;font-family:var(--mono);font-size:11px;letter-spacing:.04em;width:100%}
   #neo-search::placeholder{color:var(--faint);font-size:10.5px}
   .search-clear{background:none;border:none;color:var(--dim);cursor:pointer;font-size:11px;padding:0 4px}
   .search-clear:hover{color:var(--hot)}
+  .hud-action-btn{background:var(--panel);border:1px solid var(--line);color:var(--dim);font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:7px 11px;border-radius:2px;cursor:pointer;white-space:nowrap;backdrop-filter:blur(6px);transition:all .15s;display:flex;align-items:center;gap:4px}
+  .hud-action-btn:hover{border-color:var(--hot);color:var(--hot)}
   .search-results{position:absolute;top:calc(100% + 4px);left:0;right:0;background:rgba(8,12,24,.96);border:1px solid var(--line);border-radius:2px;max-height:240px;overflow-y:auto;z-index:20;box-shadow:0 8px 30px rgba(0,0,0,.7);scrollbar-width:thin}
   .search-item{padding:7px 10px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;border-bottom:1px solid rgba(148,178,255,.05);font-size:10.5px;transition:background .15s}
   .search-item:hover{background:rgba(120,160,255,.12);color:var(--hot)}
   .search-item .badge{font-size:9px;padding:1px 5px;border-radius:2px;letter-spacing:.08em;text-transform:uppercase}
 
   /* ---------- stat chips ---------- */
-  #chips{top:auto;bottom:0;left:0}
-  .chiprow{display:flex;gap:8px;flex-wrap:wrap;margin:30px}
+  #chips{top:auto;bottom:0;left:0;max-width:calc(50vw - 190px);pointer-events:none}
+  .chiprow{display:flex;gap:8px;flex-wrap:wrap;margin:24px 30px;pointer-events:auto}
   .chip{border:1px solid var(--line);background:var(--panel);padding:7px 12px;border-radius:2px;
     font-size:10.5px;letter-spacing:.14em;color:var(--dim);text-transform:uppercase;white-space:nowrap;backdrop-filter:blur(6px)}
   .chip b{color:var(--ink);font-weight:400;margin-left:6px;letter-spacing:.06em}
@@ -100,7 +105,8 @@
   .ca-ld{text-align:right;letter-spacing:.02em;font-weight:400}
   .ca-v{text-align:right;color:var(--dim);font-size:10px}
   .ld-hot{color:#ff7d66}.ld-warm{color:var(--hot)}.ld-cool{color:#7ec8ff}
-  #capanel footer{padding:8px 14px;font-size:9.5px;color:var(--dim);letter-spacing:.12em;border-top:1px solid var(--line);flex:none;text-align:center}
+  .ca-divider{padding:5px 12px;background:rgba(18,26,46,0.85);border-top:1px dashed rgba(148,178,255,0.22);border-bottom:1px dashed rgba(148,178,255,0.22);color:var(--hot);font-size:9px;letter-spacing:.18em;text-transform:uppercase;text-align:center;pointer-events:none;position:sticky;top:0;z-index:2}
+  #capanel footer{padding:8px 14px;font-size:10px;color:var(--dim);letter-spacing:.06em;border-top:1px solid var(--line);flex:none;text-align:center}
 
   /* ---------- time controls ---------- */
   #timec{bottom:26px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;
@@ -112,7 +118,12 @@
   #b-play{width:36px;height:30px;font-weight:bold}
   #simdate{font-size:15px;letter-spacing:.16em;color:#eef3ff;min-width:145px;text-align:center}
   #simrate{font-size:9.5px;letter-spacing:.2em;color:var(--dim);text-transform:uppercase;min-width:74px;text-align:center}
-  .timec-scrub{width:100%;display:flex;align-items:center;gap:8px;margin-top:2px}
+  .timec-scrub{width:100%;display:flex;flex-direction:column;gap:5px;margin-top:2px}
+  .scrub-milestones{display:flex;justify-content:space-between;align-items:center;width:100%;font-size:8.5px;letter-spacing:.08em;color:var(--dim);user-select:none;padding:0 2px}
+  .scrub-ms{cursor:pointer;padding:2px 4px;border-radius:2px;transition:all .15s}
+  .scrub-ms:hover{color:var(--hot);background:rgba(255,209,102,.12)}
+  .scrub-ms.hot{color:var(--hot)}
+  .scrub-bar-row{width:100%;display:flex;align-items:center;gap:8px}
   #timescrub{width:180px;-webkit-appearance:none;appearance:none;height:3px;background:var(--faint);outline:none;border-radius:2px;cursor:pointer}
   #timescrub::-webkit-slider-thumb{-webkit-appearance:none;width:11px;height:11px;border-radius:50%;background:var(--hot);cursor:pointer;box-shadow:0 0 6px var(--hot)}
   #timescrub::-moz-range-thumb{width:11px;height:11px;border-radius:50%;background:var(--hot);cursor:pointer;border:none}
@@ -142,9 +153,9 @@
   #infocard{position:fixed}
 
   /* ---------- help modal ---------- */
-  #help-modal{position:fixed;inset:0;background:rgba(4,6,13,.78);backdrop-filter:blur(6px);z-index:25;display:none;align-items:center;justify-content:center;padding:20px}
+  #help-modal{position:fixed;inset:0;background:rgba(4,6,13,.82);backdrop-filter:blur(8px);z-index:999;display:none;align-items:center;justify-content:center;padding:20px}
   #help-modal.open{display:flex}
-  .modal-box{background:rgba(10,15,30,.96);border:1px solid var(--line);border-radius:3px;max-width:520px;width:100%;padding:24px 26px;position:relative;box-shadow:0 12px 40px rgba(0,0,0,.85)}
+  .modal-box{background:rgba(10,15,30,.98);border:1px solid var(--line);border-radius:3px;max-width:520px;width:100%;max-height:85vh;overflow-y:auto;padding:24px 26px;position:relative;box-shadow:0 12px 50px rgba(0,0,0,.9);scrollbar-width:thin}
   .modal-box h2{font-family:var(--serif);font-size:22px;color:#eef3ff;margin-bottom:14px;letter-spacing:.02em}
   .modal-box .close-btn{position:absolute;top:16px;right:18px;background:none;border:none;color:var(--dim);font-size:16px;cursor:pointer}
   .modal-box .close-btn:hover{color:var(--hot)}
@@ -158,8 +169,9 @@
   #credit{bottom:8px;left:30px;font-size:9px;color:#3c4a68;letter-spacing:.1em;pointer-events:none;z-index:4;position:fixed}
   #fps{bottom:8px;right:26px;font-size:9.5px;color:#3c4a68;letter-spacing:.15em;z-index:4;position:fixed}
 
-  #hint{position:fixed;bottom:85px;left:50%;transform:translateX(-50%);z-index:4;font-size:9.5px;
-    letter-spacing:.22em;color:var(--dim);text-transform:uppercase;pointer-events:none;opacity:.85;transition:opacity 1s}
+  #hint{position:fixed;bottom:118px;left:50%;transform:translateX(-50%);z-index:4;font-size:9.5px;
+    letter-spacing:.18em;color:var(--dim);text-transform:uppercase;pointer-events:none;opacity:.88;transition:opacity 1s;
+    background:rgba(4,6,13,.7);padding:4px 12px;border-radius:2px;border:1px solid rgba(148,178,255,.08);white-space:nowrap}
 
   @media (max-width:1100px){
     #legend{display:none}
@@ -195,10 +207,14 @@
     positions computed each frame from real orbital elements by solving Kepler's equation.</div>
   
   <div id="search-box">
-    <div class="search-input-wrap">
-      <span class="search-icon">🔍</span>
-      <input type="text" id="neo-search" placeholder="Search 4,600+ asteroids (e.g. Apophis, Bennu)..." autocomplete="off" spellcheck="false">
-      <button id="search-clear" class="search-clear" style="display:none" title="Clear">✕</button>
+    <div class="search-bar-row">
+      <div class="search-input-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="neo-search" placeholder="Search 4,600+ asteroids (e.g. Apophis, Bennu)..." autocomplete="off" spellcheck="false">
+        <button id="search-clear" class="search-clear" style="display:none" title="Clear">✕</button>
+      </div>
+      <button id="c-reset" class="hud-action-btn" title="Reset Camera View (R)">⌂ Reset</button>
+      <button id="c-help" class="hud-action-btn" title="Help &amp; Shortcuts (?)">? Help</button>
     </div>
     <div id="search-results" class="search-results" style="display:none"></div>
   </div>
@@ -210,9 +226,6 @@
   <div class="chip">Passes ≤5 LD<b id="c-cad">—</b></div>
   <div class="chip click" id="c-focus">⊕ Focus: <b id="focus-label">Sun</b></div>
   <div class="chip click" id="c-haz">☄ hazardous only<b>off</b></div>
-  <div class="chip click" id="c-reset">⌂ reset view</div>
-  <div class="chip click" id="c-today">↺ now</div>
-  <div class="chip click" id="c-help">? help</div>
   <div class="chip click mob-btn ca-btn" id="c-tog-ca">📅 passes</div>
   <div class="chip click mob-btn lg-btn" id="c-tog-lg">🪐 families</div>
 </div></div>
@@ -235,7 +248,7 @@
     <button class="close-panel" id="ca-close">✕</button>
   </header>
   <div id="calist"></div>
-  <footer>CLICK A PASS TO SYNC TIME &amp; FLY TO ASTEROID</footer>
+  <footer>Click any pass to sync time &amp; fly to asteroid</footer>
 </div>
 
 <div class="hud" id="timec">
@@ -251,10 +264,18 @@
     </div>
   </div>
   <div class="timec-scrub">
-    <span style="font-size:9.5px;color:var(--dim);letter-spacing:.04em">2025</span>
-    <input type="range" id="timescrub" min="0" max="3650" step="1">
-    <span style="font-size:9.5px;color:var(--dim);letter-spacing:.04em">2034</span>
-    <button class="btn-today" id="b-today" title="Reset to present day">NOW</button>
+    <div class="scrub-milestones">
+      <span class="scrub-ms" id="ms-today" title="Jump to Present Day">NOW 2026</span>
+      <span class="scrub-ms hot" id="ms-apophis" title="Jump to Apophis 0.10 LD encounter (2029-04-13)">▲ '29 APOPHIS (0.1 LD)</span>
+      <span class="scrub-ms hot" id="ms-yr4" title="Jump to 2024 YR4 encounter (2032-12-22)">▲ '32 YR4</span>
+    </div>
+    <div class="scrub-bar-row">
+      <span style="font-size:9.5px;color:var(--dim);letter-spacing:.04em">2025</span>
+      <input type="range" id="timescrub" min="0" max="3650" step="1">
+      <span style="font-size:9.5px;color:var(--dim);letter-spacing:.04em">2034</span>
+      <button class="btn-today" id="b-today" title="Reset to present day (T)">NOW</button>
+      <button class="btn-today" id="b-help-mini" title="Guide &amp; Shortcuts (?)">?</button>
+    </div>
   </div>
 </div>
 
@@ -582,6 +603,9 @@ function fmtDate(t){const d=new Date(J2000_MS+t*86400000);
 
 /* close-approach list with time-synchronization */
 const calist=$("calist"); const caRows=[];
+const caDivider=document.createElement("div");
+caDivider.className="ca-divider";
+caDivider.textContent="▲ past encounters · upcoming ▼";
 D.cad.forEach((c,i)=>{
   const [t,idx,des,ld,v]=c;
   const div=document.createElement("div");div.className="ca-row";
@@ -593,6 +617,7 @@ D.cad.forEach((c,i)=>{
       simT=t;
       if(scrubEl)scrubEl.value=simT;
       flyTo(idx);
+      updateURL(names[idx], t);
       distGoal=Math.max(0.08,cam.dist*0.18);
     }
   });
@@ -617,11 +642,19 @@ function showInfo(i){
   infocard.style.display="block";
 }
 
-function updateURL(name){
+function updateURL(name, tDays){
   try{
     const url=new URL(window.location);
-    if(name)url.searchParams.set("a",name.replace(/\s+/g,"_"));
-    else url.searchParams.delete("a");
+    if(name) url.searchParams.set("a", name.replace(/\s+/g,"_"));
+    else if(name===null) url.searchParams.delete("a");
+
+    if(tDays!==undefined && tDays!==null){
+      const d=new Date(J2000_MS + tDays*86400000);
+      const iso=d.getUTCFullYear()+"-"+String(d.getUTCMonth()+1).padStart(2,"0")+"-"+String(d.getUTCDate()).padStart(2,"0");
+      url.searchParams.set("t", iso);
+    }else if(tDays===null){
+      url.searchParams.delete("t");
+    }
     window.history.replaceState({},"",url);
   }catch(_){}
 }
@@ -725,11 +758,15 @@ if(scrubEl){
     userScrubbing=true;
     simT=parseFloat(e.target.value);
   });
-  scrubEl.addEventListener("change",()=>{userScrubbing=false;});
+  scrubEl.addEventListener("change",()=>{
+    userScrubbing=false;
+    updateURL(selIdx>=0?names[selIdx]:undefined, simT);
+  });
 }
 function resetToToday(){
   simT=(Date.now()-J2000_MS)/86400000;
   if(scrubEl)scrubEl.value=simT;
+  updateURL(selIdx>=0?names[selIdx]:undefined, null);
 }
 $("b-today")?.addEventListener("click",resetToToday);
 $("c-today")?.addEventListener("click",resetToToday);
@@ -848,9 +885,10 @@ document.querySelectorAll(".lg-row").forEach(row=>{
   row.addEventListener("click",()=>{const c=+row.dataset.cls;clsOn[c]=!clsOn[c];row.classList.toggle("off",!clsOn[c]);});
 });
 
-/* ---------- modal, mobile toggles & deep linking ---------- */
+/* ---------- modal, mobile toggles, milestones & deep linking ---------- */
 const helpModal=$("help-modal");
 $("c-help")?.addEventListener("click",()=>helpModal?.classList.add("open"));
+$("b-help-mini")?.addEventListener("click",()=>helpModal?.classList.add("open"));
 $("help-close")?.addEventListener("click",()=>helpModal?.classList.remove("open"));
 helpModal?.addEventListener("click",e=>{if(e.target===helpModal)helpModal.classList.remove("open");});
 
@@ -858,8 +896,43 @@ $("c-tog-ca")?.addEventListener("click",()=>$("capanel")?.classList.toggle("mob-
 $("ca-close")?.addEventListener("click",()=>$("capanel")?.classList.remove("mob-show"));
 $("c-tog-lg")?.addEventListener("click",()=>$("legend")?.classList.toggle("mob-show"));
 
+/* Milestones */
+function jumpToAsteroidNamed(query, targetEpoch){
+  const q=query.toLowerCase();
+  for(let i=0;i<N;i++){
+    if(names[i]&&names[i].toLowerCase().includes(q)){
+      simT=targetEpoch;
+      if(scrubEl)scrubEl.value=simT;
+      flyTo(i);
+      updateURL(names[i], targetEpoch);
+      return;
+    }
+  }
+}
+$("ms-today")?.addEventListener("click",()=>resetToToday());
+$("ms-apophis")?.addEventListener("click",()=>{
+  // Apophis close encounter: 2029 APR 13 21:46 UTC (JD 2462240.407)
+  const apophisT = (Date.UTC(2029, 3, 13, 21, 46) - J2000_MS) / 86400000;
+  jumpToAsteroidNamed("Apophis", apophisT);
+});
+$("ms-yr4")?.addEventListener("click",()=>{
+  // 2024 YR4 close encounter: 2032 DEC 22
+  const yr4T = (Date.UTC(2032, 11, 22, 14, 0) - J2000_MS) / 86400000;
+  jumpToAsteroidNamed("YR4", yr4T);
+});
+
+/* URL initialization: support ?t=YYYY-MM-DD and ?a=NAME */
 try{
-  const initA=new URLSearchParams(window.location.search).get("a");
+  const params=new URLSearchParams(window.location.search);
+  const initT=params.get("t");
+  if(initT){
+    const ms=Date.parse(initT+"T00:00:00Z");
+    if(!isNaN(ms)){
+      simT=(ms-J2000_MS)/86400000;
+      if(scrubEl)scrubEl.value=simT;
+    }
+  }
+  const initA=params.get("a");
   if(initA){
     const clean=initA.replace(/_/g," ").toLowerCase();
     for(let i=0;i<N;i++){
@@ -1112,7 +1185,8 @@ function frame(now){
     $("simdate").textContent=fmtDate(simT);
     if(scrubEl&&!userScrubbing){scrubEl.value=simT;}
     $("simrate").textContent=(playing?RATES[rateIdx]:0)+" days / sec";
-    $("fps").textContent=Math.round(fpsEMA)+" FPS · "+N.toLocaleString()+" BODIES";
+    const showFps=new URLSearchParams(window.location.search).has("fps");
+    $("fps").textContent=(showFps?Math.round(fpsEMA)+" FPS · ":"")+N.toLocaleString()+" BODIES";
     /* adaptive resolution governor on frame-body time (~every 1.5 s) —
        immune to vsync/rAF-throttle ceilings */
     govAcc+=0.25;
@@ -1120,8 +1194,16 @@ function frame(now){
       if(ftEMA>24&&qualMul>0.5){qualMul=Math.max(0.5,qualMul*0.82);resize();}
       else if(ftEMA<10&&qualMul<1){qualMul=Math.min(1,qualMul*1.08);resize();}
     }
+    let firstUpcoming=null;
     for(const r of caRows){
-      r.div.classList.toggle("past",r.t<simT-0.5);
+      const isPast=r.t<simT-0.5;
+      r.div.classList.toggle("past",isPast);
+      if(!isPast&&!firstUpcoming)firstUpcoming=r.div;
+    }
+    if(firstUpcoming){
+      if(caDivider.nextSibling!==firstUpcoming)calist.insertBefore(caDivider,firstUpcoming);
+    }else{
+      if(calist.lastChild!==caDivider)calist.appendChild(caDivider);
     }
     if(selIdx>=0){
       const el=document.getElementById("ic-dist");
