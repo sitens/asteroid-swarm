@@ -115,6 +115,7 @@
   #timec button{background:none;border:1px solid var(--line);color:var(--ink);font-family:var(--mono);
     font-size:11px;width:30px;height:30px;border-radius:2px;cursor:pointer;transition:all .15s}
   #timec button:hover{border-color:rgba(255,209,102,.6);color:var(--hot)}
+  #timec button.on{border-color:var(--hot);color:var(--hot);background:rgba(255,209,102,.14)}
   #b-play{width:36px;height:30px;font-weight:bold}
   #simdate{font-size:15px;letter-spacing:.16em;color:#eef3ff;min-width:145px;text-align:center}
   #simrate{font-size:9.5px;letter-spacing:.2em;color:var(--dim);text-transform:uppercase;min-width:74px;text-align:center}
@@ -253,7 +254,10 @@
 
 <div class="hud" id="timec">
   <div class="timec-top">
-    <button id="b-play" title="pause / play (space)">❚❚</button>
+    <div style="display:flex;gap:4px">
+      <button id="b-rev" title="Reverse playback direction (J / ◀)">◀</button>
+      <button id="b-play" title="Pause / play (Space / K)">❚❚</button>
+    </div>
     <div>
       <div id="simdate">—</div>
       <div style="text-align:center;margin-top:2px"><span id="simrate">10 days / sec</span></div>
@@ -297,7 +301,8 @@
         <li><span>Zoom</span> <kbd>Scroll</kbd> / <kbd>Pinch</kbd></li>
         <li><span>Pan</span> <kbd>Shift + Drag</kbd> / <kbd>2-finger drag</kbd></li>
         <li><span>Track Asteroid</span> <kbd>Click object</kbd> / <kbd>Search</kbd></li>
-        <li><span>Pause / Play</span> <kbd>Space</kbd></li>
+        <li><span>Pause / Play</span> <kbd>Space</kbd> / <kbd>K</kbd></li>
+        <li><span>Reverse / Forward</span> <kbd>J</kbd> / <kbd>L</kbd> or <kbd>◀</kbd> / <kbd>▶</kbd></li>
         <li><span>Clear / Deselect</span> <kbd>Esc</kbd></li>
         <li><span>Reset Camera</span> <kbd>R</kbd></li>
         <li><span>Jump to Today</span> <kbd>T</kbd></li>
@@ -584,7 +589,7 @@ const starSpr=makeSprite("rgba(200,215,255,0.5)","rgba(255,255,255,0.95)",8);
 /* ---------- state ---------- */
 let simT=nowDays;                 // days since J2000
 const RATES=[0.5,1,2,5,10,20,60,180,365];
-let rateIdx=4, playing=true;
+let rateIdx=4, playing=true, timeDir=1;
 let hazOnly=false; const clsOn=[true,true,true,true];
 let hoverIdx=-1, selIdx=-1, tracking=false, distGoal=-1;
 let lastFrame=performance.now(), fpsEMA=60, ftEMA=8;
@@ -622,7 +627,7 @@ D.cad.forEach((c,i)=>{
       distGoal=Math.max(0.08,cam.dist*0.18);
     }
   });
-  calist.appendChild(div); caRows.push({div,t,idx});
+  calist.appendChild(div); caRows.push({div,t,idx,ld,v});
 });
 
 function estDiam(H){return 1329/Math.sqrt(0.14)*Math.pow(10,-H/5);} // km, albedo 0.14
@@ -867,17 +872,27 @@ cv.addEventListener("wheel",e=>{
 },{passive:false});
 cv.addEventListener("contextmenu",e=>e.preventDefault());
 
+function updateTimeUI(){
+  $("b-play").textContent=playing?"❚❚":"▶";
+  $("b-rev")?.classList.toggle("on",timeDir<0);
+  $("simrate").textContent=(playing?(timeDir<0?"◀ ":"")+RATES[rateIdx]:0)+" days / sec";
+}
+
 window.addEventListener("keydown",e=>{
-  if(e.code==="Space"&&e.target.tagName!=="INPUT"){e.preventDefault();playing=!playing;$("b-play").textContent=playing?"❚❚":"▶";}
+  if(e.code==="Space"&&e.target.tagName!=="INPUT"){e.preventDefault();playing=!playing;updateTimeUI();}
+  if((e.key==="k"||e.key==="K")&&e.target.tagName!=="INPUT"){playing=!playing;updateTimeUI();}
+  if((e.key==="j"||e.key==="J"||e.key==="ArrowLeft")&&e.target.tagName!=="INPUT"){timeDir=-1;if(!playing)playing=true;updateTimeUI();}
+  if((e.key==="l"||e.key==="L"||e.key==="ArrowRight")&&e.target.tagName!=="INPUT"){timeDir=1;if(!playing)playing=true;updateTimeUI();}
   if(e.code==="Escape"){select(-1);helpModal?.classList.remove("open");searchResults.style.display="none";}
   if(e.key==="/"&&e.target.tagName!=="INPUT"){e.preventDefault();searchInput.focus();}
   if((e.key==="t"||e.key==="T")&&e.target.tagName!=="INPUT"){resetToToday();}
   if((e.key==="r"||e.key==="R")&&e.target.tagName!=="INPUT"){$("c-reset").click();}
   if(e.key==="?"&&e.target.tagName!=="INPUT"){helpModal?.classList.toggle("open");}
 });
-$("b-play").addEventListener("click",()=>{playing=!playing;$("b-play").textContent=playing?"❚❚":"▶";});
-$("b-slow").addEventListener("click",()=>{rateIdx=Math.max(0,rateIdx-1);});
-$("b-fast").addEventListener("click",()=>{rateIdx=Math.min(RATES.length-1,rateIdx+1);});
+$("b-rev")?.addEventListener("click",()=>{timeDir=-timeDir;if(!playing)playing=true;updateTimeUI();});
+$("b-play").addEventListener("click",()=>{playing=!playing;updateTimeUI();});
+$("b-slow").addEventListener("click",()=>{rateIdx=Math.max(0,rateIdx-1);updateTimeUI();});
+$("b-fast").addEventListener("click",()=>{rateIdx=Math.min(RATES.length-1,rateIdx+1);updateTimeUI();});
 $("c-haz").addEventListener("click",()=>{hazOnly=!hazOnly;
   $("c-haz").classList.toggle("on",hazOnly);$("c-haz").querySelector("b").textContent=hazOnly?"on":"off";});
 $("c-reset").addEventListener("click",()=>{select(-1);
@@ -993,7 +1008,7 @@ function frame(now){
   const bodyT0=performance.now();
   const dt=Math.min(0.1,(now-lastFrame)/1000); lastFrame=now;
   fpsEMA+=(1/Math.max(dt,1e-4)-fpsEMA)*0.04; window.__fps=fpsEMA;
-  if(playing)simT+=RATES[rateIdx]*dt;
+  if(playing)simT+=RATES[rateIdx]*dt*timeDir;
 
   /* tracking camera */
   if(selIdx>=0&&tracking){
@@ -1139,6 +1154,65 @@ function frame(now){
       if(pen)ctx.lineTo(pr[0],pr[1]);else{ctx.moveTo(pr[0],pr[1]);pen=true;}
     }
     ctx.stroke();
+
+    /* --- encounter trajectory highlight (±30 days of encounter) --- */
+    let nearCad=null, minCadDt=30;
+    for(let c=0;c<caRows.length;c++){
+      if(caRows[c].idx===i){
+        const dtEnc=Math.abs(simT-caRows[c].t);
+        if(dtEnc<minCadDt){minCadDt=dtEnc;nearCad=caRows[c];}
+      }
+    }
+    const curEarthDist=Math.hypot(wx[i]-earthPos[0],wy[i]-earthPos[1],wz[i]-earthPos[2]);
+    const isEncounter=nearCad!=null||curEarthDist<0.12;
+    if(isEncounter){
+      const encEpoch=nearCad?nearCad.t:simT;
+      const ptsEnc=[];
+      for(let s=-30;s<=30;s+=1){
+        const tSample=encEpoch+s;
+        let M=M0[i]+nA[i]*(tSample-epA[i]);
+        M%=TAU;if(M<0)M+=TAU;
+        let E=eA[i]<0.8?M:Math.PI;
+        E-=(E-eA[i]*Math.sin(E)-M)/(1-eA[i]*Math.cos(E));
+        E-=(E-eA[i]*Math.sin(E)-M)/(1-eA[i]*Math.cos(E));
+        E-=(E-eA[i]*Math.sin(E)-M)/(1-eA[i]*Math.cos(E));
+        const xo=aA[i]*(Math.cos(E)-eA[i]), yo=abA[i]*Math.sin(E);
+        const xk=Px[i]*xo+Qx[i]*yo, yk=Py[i]*xo+Qy[i]*yo, zk=Pz[i]*xo+Qz[i]*yo;
+        ptsEnc.push([xk,yk,zk,s===0]);
+      }
+      /* soft outer glow */
+      ctx.strokeStyle="rgba(255,80,60,0.38)";ctx.lineWidth=5.5;
+      ctx.beginPath();let penEnc=false;
+      for(let p=0;p<ptsEnc.length;p++){
+        const d=project(ptsEnc[p][0],ptsEnc[p][1],ptsEnc[p][2],pr);
+        if(d<0){penEnc=false;continue;}
+        if(penEnc)ctx.lineTo(pr[0],pr[1]);else{ctx.moveTo(pr[0],pr[1]);penEnc=true;}
+      }
+      ctx.stroke();
+
+      /* sharp coral-red core */
+      ctx.strokeStyle="#ff5555";ctx.lineWidth=2.2;
+      ctx.beginPath();penEnc=false;
+      let midScr=null;
+      for(let p=0;p<ptsEnc.length;p++){
+        const d=project(ptsEnc[p][0],ptsEnc[p][1],ptsEnc[p][2],pr);
+        if(d<0){penEnc=false;continue;}
+        if(ptsEnc[p][3])midScr=[pr[0],pr[1]];
+        if(penEnc)ctx.lineTo(pr[0],pr[1]);else{ctx.moveTo(pr[0],pr[1]);penEnc=true;}
+      }
+      ctx.stroke();
+
+      /* encounter point pulse & badge */
+      if(midScr){
+        ctx.strokeStyle="rgba(255,209,102,0.95)";ctx.lineWidth=1.2;
+        ctx.beginPath();ctx.arc(midScr[0],midScr[1],4.5,0,TAU);ctx.stroke();
+        const encDateTxt=nearCad?fmtDate(nearCad.t):fmtDate(encEpoch);
+        const encLdTxt=nearCad?(nearCad.ld.toFixed(2)+" LD"):((curEarthDist/LD_AU).toFixed(2)+" LD");
+        ctx.fillStyle="#ff6b6b";ctx.font="9.5px "+FONT_MONO;
+        ctx.fillText("▲ ENCOUNTER "+encLdTxt+" ("+encDateTxt+")",midScr[0]+9,midScr[1]-7);
+      }
+    }
+
     const d=project(wx[i],wy[i],wz[i],pr);
     if(d>0){
       ctx.strokeStyle=hexA(col,0.95);ctx.lineWidth=1.2;
@@ -1185,7 +1259,8 @@ function frame(now){
     hudAcc=0;
     $("simdate").textContent=fmtDate(simT);
     if(scrubEl&&!userScrubbing){scrubEl.value=simT;}
-    $("simrate").textContent=(playing?RATES[rateIdx]:0)+" days / sec";
+    $("simrate").textContent=(playing?(timeDir<0?"◀ ":"")+RATES[rateIdx]:0)+" days / sec";
+    $("b-rev")?.classList.toggle("on",timeDir<0);
     const showFps=new URLSearchParams(window.location.search).has("fps");
     $("fps").textContent=(showFps?Math.round(fpsEMA)+" FPS · ":"")+N.toLocaleString()+" BODIES";
     /* adaptive resolution governor on frame-body time (~every 1.5 s) —
